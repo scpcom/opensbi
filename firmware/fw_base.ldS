@@ -8,13 +8,14 @@
  */
 
 	. = FW_TEXT_START;
+	.head : {
+		KEEP(*opensbi_head.o(.head_data*))
+	}
+	. = ALIGN(0x400); /* Need this to create proper sections */
 
 	PROVIDE(_fw_start = .);
 
-	. = ALIGN(0x1000); /* Need this to create proper sections */
-
 	/* Beginning of the code section */
-
 	.text :
  	{
 		PROVIDE(_text_start = .);

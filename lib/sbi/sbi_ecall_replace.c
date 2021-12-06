@@ -16,6 +16,8 @@
 #include <sbi/sbi_timer.h>
 #include <sbi/sbi_tlb.h>
 #include <sbi/riscv_asm.h>
+#include <sbi/sbi_console.h>
+#include <sbi/sbi_system.h>
 
 static int sbi_ecall_time_handler(struct sbi_scratch *scratch,
 				  unsigned long extid, unsigned long funcid,
@@ -143,4 +145,41 @@ struct sbi_ecall_extension ecall_ipi = {
 	.extid_start = SBI_EXT_IPI,
 	.extid_end = SBI_EXT_IPI,
 	.handle = sbi_ecall_ipi_handler,
+};
+
+static int sbi_ecall_srst_handler(struct sbi_scratch *scratch,
+				 unsigned long extid, unsigned long funcid,
+				 unsigned long *args, unsigned long *out_val,
+				 struct sbi_trap_info *out_trap)
+{
+
+	if (args[0] == SBI_EXT_SRST_RESET) {
+		switch (args[1]) {
+			case SBI_SRST_RESET_TYPE_SHUTDOWN:
+				sbi_system_shutdown(scratch, 0);
+				break;
+			case SBI_SRST_RESET_TYPE_COLD_REBOOT:
+			case SBI_SRST_RESET_TYPE_WARM_REBOOT:
+				break;
+			default:
+				return SBI_ENOTSUPP;
+		}
+
+		switch (args[2]) {
+			case SBI_SRST_RESET_REASON_NONE:
+			case SBI_SRST_RESET_REASON_SYSFAIL:
+				break;
+			default:
+				return SBI_ENOTSUPP;
+		}
+	}
+	sbi_system_reboot(scratch, args[2]);
+
+	return 0;
+}
+
+struct sbi_ecall_extension ecall_srst = {
+	.extid_start = SBI_EXT_SRST,
+	.extid_end = SBI_EXT_SRST,
+	.handle = sbi_ecall_srst_handler,
 };
