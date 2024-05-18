@@ -8,6 +8,7 @@
 #include <sbi/sbi_hart.h>
 #include <sbi/sbi_platform.h>
 #include <sbi/sbi_console.h>
+#include <sbi/sbi_trap.h>
 #include <sbi_utils/irqchip/plic.h>
 #include <sbi_utils/sys/clint.h>
 #include <sbi_utils/serial/sunxi-uart.h>
@@ -239,32 +240,32 @@ void sbi_boot_other_core(int hartid)
 }
 
 static int c910_vendor_ext_provider(long extid, long funcid,
-				unsigned long *args,
+				const struct sbi_trap_regs *regs,
 				unsigned long *out_value,
 				struct sbi_trap_info *out_trap)
 {
 	switch (extid) {
 	case SBI_EXT_VENDOR_C910_BOOT_OTHER_CORE:
-		sbi_boot_other_core((int)args[0]);
+		sbi_boot_other_core((int)regs->a0);
 		break;
 	case SBI_EXT_VENDOR_C910_SET_PMU:
 		sbi_set_pmu();
 		break;
 	case SBI_EXT_VENDOR_C910_SYSPEND:
-		sbi_system_suspend(args[0]);
+		sbi_system_suspend(regs->a0);
 		break;
 	case SBI_SET_WAKEUP_TIMER:
-		sbi_set_wakeup_src_timer((unsigned int)args[0]);
+		sbi_set_wakeup_src_timer((unsigned int)regs->a0);
 		break;
 	case SBI_SET_DEBUG_LEVEL:
 		break;
 	case SBI_SET_DEBUG_DRAM_CRC_PARAS:
-		sbi_set_dram_crc_paras(args[0], args[1], args[2]);
+		sbi_set_dram_crc_paras(regs->a0, regs->a1, regs->a2);
 		break;
 	case SBI_SET_UART_BAUDRATE:
 		break;
 	case SBI_EXT_VENDOR_C910_WAKEUP:
-		sbi_system_set_wakeup(args[0], args[1]);
+		sbi_system_set_wakeup(regs->a0, regs->a1);
 		break;
 
 	default:
