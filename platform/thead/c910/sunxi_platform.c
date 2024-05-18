@@ -163,17 +163,18 @@ static int c910_timer_init(bool cold_boot)
 	return clint_warm_timer_init();
 }
 
-static int c910_system_shutdown(u32 type)
+static void c910_system_shutdown(u32 type, u32 reason)
 {
 	/*TODO:power down something*/
 	while(1);
-	return 0;
 }
 
-static int sunxi_system_reset(u32 type)
+static void sunxi_system_reset(u32 type, u32 reason)
 {
-	if (!type)
-		return c910_system_shutdown(type);
+	if (!type) {
+		c910_system_shutdown(type, reason);
+		return;
+	}
 
 	sbi_printf("sbi reboot\n");
 	unsigned int value = 0;
@@ -190,7 +191,6 @@ static int sunxi_system_reset(u32 type)
 		       (SUNXI_WDOG_KEY1 << SUNXI_WDOG_CFG_KEY_OFFSET);
 	reg = (void *)(SUNXI_WDOG_BASE + SUNXI_WDOG_MODE_REG);
 	writel(value, reg);
-	return 0;
 }
 
 void sbi_set_pmu()
