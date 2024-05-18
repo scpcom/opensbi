@@ -126,8 +126,7 @@ struct sbi_ecall_extension ecall_ipi = {
 	.handle = sbi_ecall_ipi_handler,
 };
 
-static int sbi_ecall_srst_handler(struct sbi_scratch *scratch,
-				 unsigned long extid, unsigned long funcid,
+static int sbi_ecall_srst_handler(unsigned long extid, unsigned long funcid,
 				 unsigned long *args, unsigned long *out_val,
 				 struct sbi_trap_info *out_trap)
 {
@@ -135,7 +134,7 @@ static int sbi_ecall_srst_handler(struct sbi_scratch *scratch,
 	if (args[0] == SBI_EXT_SRST_RESET) {
 		switch (args[1]) {
 			case SBI_SRST_RESET_TYPE_SHUTDOWN:
-				sbi_system_shutdown(scratch, 0);
+				sbi_system_shutdown(0);
 				break;
 			case SBI_SRST_RESET_TYPE_COLD_REBOOT:
 			case SBI_SRST_RESET_TYPE_WARM_REBOOT:
@@ -152,7 +151,7 @@ static int sbi_ecall_srst_handler(struct sbi_scratch *scratch,
 				return SBI_ENOTSUPP;
 		}
 	}
-	sbi_system_reboot(scratch, args[2]);
+	sbi_system_reboot(args[2]);
 
 	return 0;
 }
