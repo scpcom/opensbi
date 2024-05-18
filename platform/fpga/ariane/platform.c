@@ -1,21 +1,20 @@
-/* SPDX-License-Identifier: GPL-2.0 */
+/* SPDX-License-Identifier: BSD-2-Clause */
 /*
  * Copyright (C) 2019 FORTH-ICS/CARV
  *				Panagiotis Peristerakis <perister@ics.forth.gr>
  */
 
+#include <sbi/riscv_asm.h>
 #include <sbi/riscv_encoding.h>
+#include <sbi/riscv_io.h>
+#include <sbi/sbi_console.h>
 #include <sbi/sbi_const.h>
+#include <sbi/sbi_hart.h>
 #include <sbi/sbi_platform.h>
+#include <sbi_utils/fdt/fdt_fixup.h>
 #include <sbi_utils/irqchip/plic.h>
 #include <sbi_utils/serial/uart8250.h>
 #include <sbi_utils/sys/clint.h>
-#include <sbi/sbi_console.h>
-#include <sbi/sbi_hart.h>
-#include <libfdt.h>
-#include <fdt.h>
-#include <sbi_utils/irqchip/plic.h>
-#include <sbi/riscv_io.h>
 
 #define ARIANE_UART_ADDR			0x10000000
 #define ARIANE_UART_FREQ			50000000
@@ -26,17 +25,12 @@
 #define ARIANE_PLIC_NUM_SOURCES			3
 #define ARIANE_HART_COUNT			1
 #define ARIANE_CLINT_ADDR 0x2000000
-#define PLIC_ENABLE_BASE		0x2000
-#define PLIC_ENABLE_STRIDE		0x80
-#define PLIC_CONTEXT_BASE		0x200000
-#define PLIC_CONTEXT_STRIDE		0x1000
 
 #define SBI_ARIANE_FEATURES	\
 	(SBI_PLATFORM_HAS_TIMER_VALUE | \
 	 SBI_PLATFORM_HAS_SCOUNTEREN | \
 	 SBI_PLATFORM_HAS_MCOUNTEREN | \
 	 SBI_PLATFORM_HAS_MFAULTS_DELEGATION)
-
 
 /*
  * Ariane platform early initialization.
@@ -56,8 +50,10 @@ static int ariane_final_init(bool cold_boot)
 
 	if (!cold_boot)
 		return 0;
+
 	fdt = sbi_scratch_thishart_arg1_ptr();
-	plic_fdt_fixup(fdt, "riscv,plic0");
+	fdt_fixups(fdt);
+
 	return 0;
 }
 
@@ -67,10 +63,10 @@ static int ariane_final_init(bool cold_boot)
 static int ariane_console_init(void)
 {
 	return uart8250_init(ARIANE_UART_ADDR,
-						 ARIANE_UART_FREQ,
-						 ARIANE_UART_BAUDRATE,
-						ARIANE_UART_REG_SHIFT,
-						ARIANE_UART_REG_WIDTH);
+			     ARIANE_UART_FREQ,
+			     ARIANE_UART_BAUDRATE,
+			     ARIANE_UART_REG_SHIFT,
+			     ARIANE_UART_REG_WIDTH);
 }
 
 static int plic_ariane_warm_irqchip_init(u32 target_hart,
@@ -105,7 +101,7 @@ static int plic_ariane_warm_irqchip_init(u32 target_hart,
  */
 static int ariane_irqchip_init(bool cold_boot)
 {
-	u32 hartid = sbi_current_hartid();
+	u32 hartid = current_hartid();
 	int ret;
 
 	if (cold_boot) {
@@ -200,7 +196,6 @@ const struct sbi_platform platform = {
 	.name = "ARIANE RISC-V",
 	.features = SBI_ARIANE_FEATURES,
 	.hart_count = ARIANE_HART_COUNT,
-	.hart_stack_size = 4096,
-	.disabled_hart_mask = 0,
+	.hart_stack_size = SBI_PLATFORM_DEFAULT_HART_STACK_SIZE,
 	.platform_ops_addr = (unsigned long)&platform_ops
 };
