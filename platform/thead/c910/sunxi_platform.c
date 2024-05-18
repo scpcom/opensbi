@@ -160,8 +160,10 @@ static int c910_system_shutdown(u32 type)
 	return 0;
 }
 
-static int sunxi_system_reboot(u32 type)
+static int sunxi_system_reset(u32 type)
 {
+	if (!type)
+		return c910_system_shutdown(type);
 
 	sbi_printf("sbi reboot\n");
 	unsigned int value = 0;
@@ -339,8 +341,7 @@ const struct sbi_platform_operations platform_ops = {
 	.timer_init          = c910_timer_init,
 	.timer_event_start   = clint_timer_event_start,
 
-	.system_reboot      = sunxi_system_reboot,
-	.system_shutdown     = c910_system_shutdown,
+	.system_reset        = sunxi_system_reset,
 
 	.vendor_ext_provider = c910_vendor_ext_provider,
 };

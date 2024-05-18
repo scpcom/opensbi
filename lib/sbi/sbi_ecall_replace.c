@@ -14,6 +14,7 @@
 #include <sbi/sbi_error.h>
 #include <sbi/sbi_hart.h>
 #include <sbi/sbi_ipi.h>
+#include <sbi/sbi_platform.h>
 #include <sbi/sbi_timer.h>
 #include <sbi/sbi_tlb.h>
 #include <sbi/riscv_asm.h>
@@ -139,7 +140,7 @@ static int sbi_ecall_srst_handler(unsigned long extid, unsigned long funcid,
 	if (args[0] == SBI_EXT_SRST_RESET) {
 		switch (args[1]) {
 			case SBI_SRST_RESET_TYPE_SHUTDOWN:
-				sbi_system_shutdown(0);
+				sbi_system_reset(SBI_PLATFORM_RESET_SHUTDOWN);
 				break;
 			case SBI_SRST_RESET_TYPE_COLD_REBOOT:
 			case SBI_SRST_RESET_TYPE_WARM_REBOOT:
@@ -156,7 +157,7 @@ static int sbi_ecall_srst_handler(unsigned long extid, unsigned long funcid,
 				return SBI_ENOTSUPP;
 		}
 	}
-	sbi_system_reboot(args[2]);
+	sbi_system_reset(args[2]);
 
 	return 0;
 }
