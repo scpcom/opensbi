@@ -27,7 +27,7 @@
 #define SBI_EXT_IPI				0x735049
 #define SBI_EXT_RFENCE				0x52464E43
 #define SBI_EXT_HSM				0x48534D
-#define SBI_EXT_SRST                            0x53525354
+#define SBI_EXT_SRST				0x53525354
 
 /* SBI function IDs for BASE extension*/
 #define SBI_EXT_BASE_GET_SPEC_VERSION		0x0
@@ -43,19 +43,6 @@
 
 /* SBI function IDs for IPI extension*/
 #define SBI_EXT_IPI_SEND_IPI			0x0
-
-
-/* SBI function IDs for SRST extension */
-#define SBI_EXT_SRST_RESET                      0x0
-
-#define SBI_SRST_RESET_TYPE_SHUTDOWN            0x0
-#define SBI_SRST_RESET_TYPE_COLD_REBOOT 0x1
-#define SBI_SRST_RESET_TYPE_WARM_REBOOT 0x2
-#define SBI_SRST_RESET_TYPE_LAST        SBI_SRST_RESET_TYPE_WARM_REBOOT
-
-#define SBI_SRST_RESET_REASON_NONE      0x0
-#define SBI_SRST_RESET_REASON_SYSFAIL   0x1
-
 
 /* SBI function IDs for RFENCE extension*/
 #define SBI_EXT_RFENCE_REMOTE_FENCE_I		0x0

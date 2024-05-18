@@ -36,7 +36,6 @@ extern struct sbi_ecall_extension ecall_legacy;
 extern struct sbi_ecall_extension ecall_time;
 extern struct sbi_ecall_extension ecall_rfence;
 extern struct sbi_ecall_extension ecall_ipi;
-extern struct sbi_ecall_extension ecall_srst;
 extern struct sbi_ecall_extension ecall_vendor;
 extern struct sbi_ecall_extension ecall_hsm;
 extern struct sbi_ecall_extension ecall_srst;

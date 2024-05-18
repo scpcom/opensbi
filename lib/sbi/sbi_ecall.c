@@ -155,9 +155,6 @@ int sbi_ecall_init(void)
 	ret = sbi_ecall_register_extension(&ecall_ipi);
 	if (ret)
 		return ret;
-	ret = sbi_ecall_register_extension(&ecall_srst);
-	if (ret)
-		return ret;
 	ret = sbi_ecall_register_extension(&ecall_base);
 	if (ret)
 		return ret;
