@@ -274,68 +274,9 @@ static int c910_vendor_ext_provider(long extid, long funcid,
 	return 0;
 }
 
-/* Get number of PMP regions for given HART. */
-static u32 sunxi_pmp_region_count(u32 hartid)
-{
-	return 4;
-}
-
-static unsigned long log2roundup(unsigned long x)
-{
-	unsigned long ret = 0;
-
-	while (ret < __riscv_xlen) {
-		if (x <= (1UL << ret))
-			break;
-		ret++;
-	}
-
-	return ret;
-}
-/*
- * Get PMP regions details (namely: protection, base address, and size) for
- * a given HART.
- */
-static int sunxi_pmp_region_info(u32 hartid, u32 index, ulong *prot,
-				 ulong *addr, ulong *log2size)
-{
-	int ret = 0;
-
-	switch (index) {
-	case 0:
-		*prot	  = PMP_R | PMP_W | PMP_X;
-		*addr	  = 0x40000000;
-		*log2size = log2roundup(0x40000000);
-		break;
-	case 1:
-		*prot	  = PMP_R | PMP_W | PMP_X;
-		*addr	  = 0x80000000;
-		*log2size = log2roundup(0x40000000);
-		break;
-	case 2:
-		*prot	  = PMP_R | PMP_W | PMP_X;
-		*addr	  = 0x20000;
-		*log2size = log2roundup(0x8000);
-		break;
-	case 3:
-		*prot	  = PMP_R | PMP_W;
-		*addr	  = 0x0;
-		*log2size = log2roundup(0x40000000);
-		break;
-	default:
-		ret = -1;
-		break;
-	};
-
-	return ret;
-}
-
 const struct sbi_platform_operations platform_ops = {
 	.early_init          = c910_early_init,
 	.final_init          = c910_final_init,
-
-	.pmp_region_count    = sunxi_pmp_region_count,
-	.pmp_region_info     = sunxi_pmp_region_info,
 
 	.console_putc        = sunxi_uart_putc,
 	.console_getc        = sunxi_uart_getc,
