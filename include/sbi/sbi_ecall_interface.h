@@ -26,6 +26,7 @@
 #define SBI_EXT_TIME				0x54494D45
 #define SBI_EXT_IPI				0x735049
 #define SBI_EXT_RFENCE				0x52464E43
+#define SBI_EXT_HSM				0x48534D
 #define SBI_EXT_SRST                            0x53525354
 
 /* SBI function IDs for BASE extension*/
