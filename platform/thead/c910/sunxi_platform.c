@@ -10,9 +10,10 @@
 #include <sbi/sbi_console.h>
 #include <sbi/sbi_system.h>
 #include <sbi/sbi_trap.h>
+#include <sbi_utils/ipi/aclint_mswi.h>
 #include <sbi_utils/irqchip/plic.h>
-#include <sbi_utils/sys/clint.h>
 #include <sbi_utils/serial/sunxi-uart.h>
+#include <sbi_utils/timer/aclint_mtimer.h>
 #include "sunxi_platform.h"
 #include "private_opensbi.h"
 #include "sbi/sbi_ecall_interface.h"
@@ -25,8 +26,18 @@
 extern struct private_opensbi_head  opensbi_head;
 struct c910_regs_struct c910_regs;
 
-static struct clint_data clint = {
-	.addr = 0, /* Updated at cold boot time */
+static struct aclint_mswi_data mswi = {
+	.addr = 0,
+	.size = ACLINT_MSWI_SIZE,
+	.first_hartid = 0,
+	.hart_count = C910_HART_COUNT,
+};
+
+static struct aclint_mtimer_data mtimer = {
+	.mtime_addr = 0,
+	.mtime_size = ACLINT_DEFAULT_MTIME_SIZE,
+	.mtimecmp_addr = 0,
+	.mtimecmp_size = ACLINT_DEFAULT_MTIMECMP_SIZE,
 	.first_hartid = 0,
 	.hart_count = C910_HART_COUNT,
 	.has_64bit_mmio = FALSE,
@@ -90,7 +101,7 @@ static int c910_early_init(bool cold_boot)
 		addr = opensbi_head.dtb_base;
 		sbi_printf("opensbi r: %ld\n", addr);
 	if (cold_boot) {
-		sbi_system_reset_set_device(&c910_reset);
+		sbi_system_reset_add_device(&c910_reset);
 
 		/* Load from boot core */
 		c910_regs.pmpaddr0 = csr_read(CSR_PMPADDR0);
@@ -179,13 +190,13 @@ static int c910_ipi_init(bool cold_boot)
 	int rc;
 
 	if (cold_boot) {
-		clint.addr = c910_regs.clint_base_addr;
-		rc = clint_cold_ipi_init(&clint);
+		mswi.addr = c910_regs.clint_base_addr + CLINT_MSWI_OFFSET;
+		rc = aclint_mswi_cold_init(&mswi);
 		if (rc)
 			return rc;
 	}
 
-	return clint_warm_ipi_init();
+	return aclint_mswi_warm_init();
 }
 
 static int c910_timer_init(bool cold_boot)
@@ -193,13 +204,14 @@ static int c910_timer_init(bool cold_boot)
 	int ret;
 
 	if (cold_boot) {
-		clint.addr = c910_regs.clint_base_addr;
-		ret = clint_cold_timer_init(&clint, NULL);
+		mtimer.mtime_addr = c910_regs.clint_base_addr + CLINT_MTIMER_OFFSET + ACLINT_DEFAULT_MTIME_OFFSET;
+		mtimer.mtimecmp_addr = c910_regs.clint_base_addr + CLINT_MTIMER_OFFSET + ACLINT_DEFAULT_MTIMECMP_OFFSET;
+		ret = aclint_mtimer_cold_init(&mtimer, NULL);
 		if (ret)
 			return ret;
 	}
 
-	return clint_warm_timer_init();
+	return aclint_mtimer_warm_init();
 }
 
 void sbi_set_pmu()
