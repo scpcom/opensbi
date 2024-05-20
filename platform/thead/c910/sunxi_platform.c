@@ -47,6 +47,7 @@ extern int sbi_set_wakeup_src_timer(uint32_t wakeup_irq);
 extern int sbi_set_dram_crc_paras(long dram_crc_en, long dram_crc_srcaddr,
 				  long dram_crc_len);
 
+#ifdef C910_DELEGATE_TRAPS
 static void c910_delegate_traps()
 {
 	unsigned long exceptions = csr_read(CSR_MEDELEG);
@@ -58,6 +59,7 @@ static void c910_delegate_traps()
 		(1U << CAUSE_MISALIGNED_STORE) | (1U << CAUSE_STORE_ACCESS));
 	csr_write(CSR_MEDELEG, exceptions);
 }
+#endif
 
 static void c910_system_shutdown(u32 type, u32 reason)
 {
@@ -146,7 +148,9 @@ static int c910_early_init(bool cold_boot)
 
 static int c910_final_init(bool cold_boot)
 {
+#ifdef C910_DELEGATE_TRAPS
 	c910_delegate_traps();
+#endif
 
 	return 0;
 }
