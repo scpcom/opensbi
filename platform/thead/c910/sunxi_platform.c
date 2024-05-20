@@ -8,6 +8,7 @@
 #include <sbi/sbi_hart.h>
 #include <sbi/sbi_platform.h>
 #include <sbi/sbi_console.h>
+#include <sbi/sbi_system.h>
 #include <sbi/sbi_trap.h>
 #include <sbi_utils/irqchip/plic.h>
 #include <sbi_utils/sys/clint.h>
@@ -47,12 +48,50 @@ static void c910_delegate_traps()
 	csr_write(CSR_MEDELEG, exceptions);
 }
 
+static void c910_system_shutdown(u32 type, u32 reason)
+{
+	/*TODO:power down something*/
+	while(1);
+}
+
+static void sunxi_system_reset(u32 type, u32 reason)
+{
+	if (!type) {
+		c910_system_shutdown(type, reason);
+		return;
+	}
+
+	sbi_printf("sbi reboot\n");
+	unsigned int value = 0;
+	void *reg = NULL;
+
+	/* config reset whole system */
+	value = (0x1 << SUNXI_WDOG_CFG_CONFIG_OFFSET) |
+		       (SUNXI_WDOG_KEY1 << SUNXI_WDOG_CFG_KEY_OFFSET);
+	reg = (void *)(SUNXI_WDOG_BASE + SUNXI_WDOG_CFG_REG);
+	writel(value,reg);
+
+	/* enable wdog */
+	value = (0x1 << SUNXI_WDOG_MODE_EN_OFFSET) |
+		       (SUNXI_WDOG_KEY1 << SUNXI_WDOG_CFG_KEY_OFFSET);
+	reg = (void *)(SUNXI_WDOG_BASE + SUNXI_WDOG_MODE_REG);
+	writel(value, reg);
+}
+
+static struct sbi_system_reset_device c910_reset = {
+	.name = "thead_c910_reset",
+	//.system_reset_check = c910_system_reset_check,
+	.system_reset = sunxi_system_reset
+};
+
 static int c910_early_init(bool cold_boot)
 {
 	unsigned long addr = 0;
 		addr = opensbi_head.dtb_base;
 		sbi_printf("opensbi r: %ld\n", addr);
 	if (cold_boot) {
+		sbi_system_reset_set_device(&c910_reset);
+
 		/* Load from boot core */
 		c910_regs.pmpaddr0 = csr_read(CSR_PMPADDR0);
 		c910_regs.pmpaddr1 = csr_read(CSR_PMPADDR1);
@@ -163,36 +202,6 @@ static int c910_timer_init(bool cold_boot)
 	return clint_warm_timer_init();
 }
 
-static void c910_system_shutdown(u32 type, u32 reason)
-{
-	/*TODO:power down something*/
-	while(1);
-}
-
-static void sunxi_system_reset(u32 type, u32 reason)
-{
-	if (!type) {
-		c910_system_shutdown(type, reason);
-		return;
-	}
-
-	sbi_printf("sbi reboot\n");
-	unsigned int value = 0;
-	void *reg = NULL;
-
-	/* config reset whole system */
-	value = (0x1 << SUNXI_WDOG_CFG_CONFIG_OFFSET) |
-		       (SUNXI_WDOG_KEY1 << SUNXI_WDOG_CFG_KEY_OFFSET);
-	reg = (void *)(SUNXI_WDOG_BASE + SUNXI_WDOG_CFG_REG);
-	writel(value,reg);
-
-	/* enable wdog */
-	value = (0x1 << SUNXI_WDOG_MODE_EN_OFFSET) |
-		       (SUNXI_WDOG_KEY1 << SUNXI_WDOG_CFG_KEY_OFFSET);
-	reg = (void *)(SUNXI_WDOG_BASE + SUNXI_WDOG_MODE_REG);
-	writel(value, reg);
-}
-
 void sbi_set_pmu()
 {
 	unsigned long interrupts;
@@ -279,20 +288,13 @@ const struct sbi_platform_operations platform_ops = {
 	.early_init          = c910_early_init,
 	.final_init          = c910_final_init,
 
-	.console_putc        = sunxi_uart_putc,
-	.console_getc        = sunxi_uart_getc,
 	.console_init        = sunxi_console_init,
 
 	.irqchip_init        = c910_irqchip_init,
 
 	.ipi_init            = c910_ipi_init,
-	.ipi_send            = clint_ipi_send,
-	.ipi_clear           = clint_ipi_clear,
 
 	.timer_init          = c910_timer_init,
-	.timer_event_start   = clint_timer_event_start,
-
-	.system_reset        = sunxi_system_reset,
 
 	.vendor_ext_provider = c910_vendor_ext_provider,
 };

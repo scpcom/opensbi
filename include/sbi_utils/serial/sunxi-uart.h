@@ -12,10 +12,6 @@
 
 #include <sbi/sbi_types.h>
 
-void sunxi_uart_putc(char ch);
-
-int sunxi_uart_getc(void);
-
 int sunxi_uart_init(unsigned long base);
 
 #endif

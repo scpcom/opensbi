@@ -18,13 +18,13 @@
 
 static volatile uint32_t* sunxi_uart;
 
-void sunxi_uart_putc(char ch)
+static void sunxi_uart_putc(char ch)
 {
 	while ((sunxi_uart[SUNXI_UART_USR] & SUNXI_UART_USR_NF) == 0);
 	sunxi_uart[SUNXI_UART_THR] = ch;
 }
 
-int sunxi_uart_getc(void)
+static int sunxi_uart_getc(void)
 {
 	if ((sunxi_uart[SUNXI_UART_USR] & SUNXI_UART_USR_RFNE) != 0)
 		return sunxi_uart[SUNXI_UART_RBR];
@@ -32,8 +32,17 @@ int sunxi_uart_getc(void)
 		return -1;
 }
 
+static struct sbi_console_device sunxi_console = {
+		.name = "sunxi_uart",
+		.console_putc = sunxi_uart_putc,
+		.console_getc = sunxi_uart_getc
+};
+
 int sunxi_uart_init(unsigned long base)
 {
 	sunxi_uart = (volatile void *)base;
+
+	sbi_console_set_device(&sunxi_console);
+
 	return 0;
 }
