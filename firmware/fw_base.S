@@ -65,7 +65,11 @@ _try_lottery:
 
 	/* Save load address */
 	lla	t0, _load_start
+#ifdef FW_PIC
 	lla	t1, _fw_start
+#else
+	lla	t1, _start
+#endif
 	REG_S	t1, 0(t0)
 
 #ifdef FW_PIC
@@ -172,7 +176,7 @@ _relocate_copy_to_upper_loop:
 	blt	t0, t1, _relocate_copy_to_upper_loop
 	jr	t4
 _wait_relocate_copy_done:
-	lla	t0, _fw_start
+	lla	t0, _start
 	lla	t1, _link_start
 	REG_L	t1, 0(t1)
 	beq	t0, t1, _wait_for_boot_hart
@@ -516,7 +520,11 @@ _boot_status:
 _load_start:
 	RISCV_PTR	_fw_start
 _link_start:
+#ifdef FW_PIC
 	RISCV_PTR	FW_TEXT_START
+#else
+	RISCV_PTR	_fw_start
+#endif
 _link_end:
 	RISCV_PTR	_fw_reloc_end
 
