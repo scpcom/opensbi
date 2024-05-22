@@ -67,6 +67,17 @@ static void c910_system_shutdown(u32 type, u32 reason)
 	while(1);
 }
 
+static int sunxi_system_reset_check(u32 type, u32 reason)
+{
+	switch (type) {
+	case SBI_SRST_RESET_TYPE_COLD_REBOOT:
+	case SBI_SRST_RESET_TYPE_WARM_REBOOT:
+		return 1;
+	}
+
+	return 0;
+}
+
 static void sunxi_system_reset(u32 type, u32 reason)
 {
 	if (!type) {
@@ -91,9 +102,9 @@ static void sunxi_system_reset(u32 type, u32 reason)
 	writel(value, reg);
 }
 
-static struct sbi_system_reset_device c910_reset = {
-	.name = "thead_c910_reset",
-	//.system_reset_check = c910_system_reset_check,
+static struct sbi_system_reset_device sunxi_reset = {
+	.name = "sunxi_reset",
+	.system_reset_check = sunxi_system_reset_check,
 	.system_reset = sunxi_system_reset
 };
 
@@ -103,7 +114,7 @@ static int c910_early_init(bool cold_boot)
 		addr = opensbi_head.dtb_base;
 		sbi_printf("opensbi r: %ld\n", addr);
 	if (cold_boot) {
-		sbi_system_reset_add_device(&c910_reset);
+		sbi_system_reset_add_device(&sunxi_reset);
 
 		/* Load from boot core */
 		c910_regs.pmpaddr0 = csr_read(CSR_PMPADDR0);
