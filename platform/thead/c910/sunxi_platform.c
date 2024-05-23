@@ -47,6 +47,10 @@ extern int sbi_set_wakeup_src_timer(uint32_t wakeup_irq);
 extern int sbi_set_dram_crc_paras(long dram_crc_en, long dram_crc_srcaddr,
 				  long dram_crc_len);
 
+extern int c9xx_extensions_init(struct sbi_hart_features *hfeatures);
+extern int c9xx_irqchip_init(bool cold_boot);
+extern int sunxi_final_init(bool cold_boot);
+
 #ifdef C910_DELEGATE_TRAPS
 static void c910_delegate_traps()
 {
@@ -163,7 +167,7 @@ static int c910_final_init(bool cold_boot)
 	c910_delegate_traps();
 #endif
 
-	return 0;
+	return sunxi_final_init(cold_boot);
 }
 
 static int try_uart_port(void)
@@ -189,15 +193,6 @@ static int sunxi_console_init(void)
 	uart_base = SUNXI_UART_BASE + port_num * SUNXI_UART_ADDR_OFFSET;
 
 	return sunxi_uart_init(uart_base);
-}
-
-static int c910_irqchip_init(bool cold_boot)
-{
-	/* Delegate plic enable into S-mode */
-	writel(C910_PLIC_DELEG_ENABLE,
-		(void *)c910_regs.plic_base_addr + C910_PLIC_DELEG_OFFSET);
-
-	return 0;
 }
 
 static int c910_ipi_init(bool cold_boot)
@@ -314,10 +309,11 @@ static int c910_vendor_ext_provider(long extid, long funcid,
 const struct sbi_platform_operations platform_ops = {
 	.early_init          = c910_early_init,
 	.final_init          = c910_final_init,
+	.extensions_init     = c9xx_extensions_init,
 
 	.console_init        = sunxi_console_init,
 
-	.irqchip_init        = c910_irqchip_init,
+	.irqchip_init        = c9xx_irqchip_init,
 
 	.ipi_init            = c910_ipi_init,
 
