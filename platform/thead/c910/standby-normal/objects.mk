@@ -4,7 +4,9 @@
 
 .DEFAULT_GOAL := all
 
+ifeq ($(PLATFORM_RISCV_ISA),rv64gcxthead)
 platform-objs-y += standby-normal/standby.o standby-normal/loadelf.o
+endif
 
 CROSS_COMPILE_DIR:=$(shell $(READLINK) -e $(shell dirname $(CROSS_COMPILE)))
 CROSS_COMPILE_BASE:=$(shell basename $(CROSS_COMPILE))

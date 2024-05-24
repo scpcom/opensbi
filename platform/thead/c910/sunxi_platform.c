@@ -282,22 +282,28 @@ static int c910_vendor_ext_provider(long extid, long funcid,
 	case SBI_EXT_VENDOR_C910_SET_PMU:
 		sbi_set_pmu();
 		break;
+#ifdef PLATFORM_XTHEAD
 	case SBI_EXT_VENDOR_C910_SYSPEND:
 		sbi_system_suspend(regs->a0);
 		break;
 	case SBI_SET_WAKEUP_TIMER:
 		sbi_set_wakeup_src_timer((unsigned int)regs->a0);
 		break;
+#endif
 	case SBI_SET_DEBUG_LEVEL:
 		break;
+#ifdef PLATFORM_XTHEAD
 	case SBI_SET_DEBUG_DRAM_CRC_PARAS:
 		sbi_set_dram_crc_paras(regs->a0, regs->a1, regs->a2);
 		break;
+#endif
 	case SBI_SET_UART_BAUDRATE:
 		break;
+#ifdef PLATFORM_XTHEAD
 	case SBI_EXT_VENDOR_C910_WAKEUP:
 		sbi_system_set_wakeup(regs->a0, regs->a1);
 		break;
+#endif
 
 	default:
 		sbi_printf("Unsupported private sbi call: %ld\n", extid);
