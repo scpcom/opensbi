@@ -63,7 +63,11 @@ static int thead_c9xx_irqchip_plic_warm_init(void)
 
 	return plic_warm_irqchip_init(plic_hartid2data[hartid],
 				      plic_hartid2context[hartid][0],
+#ifndef KEEP_ALL_IRQS_FOR_S_MODE
 				      plic_hartid2context[hartid][1]);
+#else
+				      -1);
+#endif
 }
 
 static int thead_c9xx_irqchip_plic_update_hartid_table(struct plic_data *pd)
