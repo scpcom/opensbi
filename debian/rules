@@ -1,0 +1,31 @@
+#!/usr/bin/make -f
+
+# Enable verbose build by default, disable when terse is specified.
+ifeq (,$(filter terse,$(DEB_BUILD_OPTIONS)))
+VERBOSE=1
+else
+VERBOSE=0
+endif
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	# Always set CROSS_COMPILE, which also works for native builds.
+	# Strip binaries, since dh_strip may not be called for arch:all.
+	CROSS_COMPILE=riscv64-linux-gnu- make \
+		V=$(VERBOSE) \
+		FW_PAYLOAD=n \
+		PLATFORM=generic ; \
+	for elffile in build/platform/generic/firmware/fw_*.elf ; do \
+		riscv64-linux-gnu-strip --remove-section=.comment \
+			--remove-section=.note \
+			$${elffile} ; \
+	done
+
+override_dh_installdocs:
+	dh_installdocs --exclude=doxygen.cfg
+
+override_dh_install:
+	chmod -x build/platform/generic/firmware/fw_*.bin
+	dh_install

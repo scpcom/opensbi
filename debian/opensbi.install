@@ -1,0 +1,2 @@
+build/platform/generic/firmware/fw_*.elf /usr/lib/riscv64-linux-gnu/opensbi/generic/
+build/platform/generic/firmware/fw_*.bin /usr/lib/riscv64-linux-gnu/opensbi/generic/
