@@ -143,6 +143,10 @@ deps-y+=$(libsbi-objs-path-y:.o=.dep)
 deps-y+=$(libsbiutils-objs-path-y:.o=.dep)
 deps-y+=$(firmware-objs-path-y:.o=.dep)
 
+ifeq (${CHIP_ARCH},SG200X)
+CHIP_ARCH=CV181X
+endif
+
 ifeq (,$(wildcard ${PM_SRAM_BIN_PATH}))
 	ifeq (${CHIP_ARCH},CV180X)
 		PM_SRAM_BIN_PATH=${OPENSBI_PATH}/pm_default_cv180x.bin
