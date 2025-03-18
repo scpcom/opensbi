@@ -150,37 +150,12 @@ int sbi_ecall_init(void)
 	struct sbi_ecall_extension *ext;
 	unsigned long i;
 
-	/* The order of below registrations is performance optimized */
-	ret = sbi_ecall_register_extension(&ecall_time);
-	if (ret)
-		return ret;
-	ret = sbi_ecall_register_extension(&ecall_rfence);
-	if (ret)
-		return ret;
-	ret = sbi_ecall_register_extension(&ecall_ipi);
-	if (ret)
-		return ret;
-	ret = sbi_ecall_register_extension(&ecall_base);
-	if (ret)
-		return ret;
-	ret = sbi_ecall_register_extension(&ecall_hsm);
-	if (ret)
-		return ret;
-	ret = sbi_ecall_register_extension(&ecall_srst);
-	if (ret)
-		return ret;
-	ret = sbi_ecall_register_extension(&ecall_pmu);
-	if (ret)
-		return ret;
-	ret = sbi_ecall_register_extension(&ecall_legacy);
-	if (ret)
-		return ret;
-	ret = sbi_ecall_register_extension(&ecall_vendor);
-	if (ret)
-		return ret;
-	ret = sbi_ecall_register_extension(&ecall_susp);
-	if (ret)
-		return ret;
+	for (i = 0; i < sbi_ecall_exts_size; i++) {
+		ext = sbi_ecall_exts[i];
+		ret = sbi_ecall_register_extension(ext);
+		if (ret)
+			return ret;
+	}
 
 	return 0;
 }
