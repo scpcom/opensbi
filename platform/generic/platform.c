@@ -18,6 +18,7 @@
 #include <sbi_utils/fdt/fdt_helper.h>
 #include <sbi_utils/fdt/fdt_pmu.h>
 #include <sbi_utils/irqchip/fdt_irqchip.h>
+#include <sbi_utils/irqchip/imsic.h>
 #include <sbi_utils/serial/fdt_serial.h>
 #include <sbi_utils/timer/fdt_timer.h>
 #include <sbi_utils/ipi/fdt_ipi.h>
@@ -41,8 +42,8 @@ static void fw_platform_lookup_special(void *fdt, int root_offset)
 	const struct platform_override *plat;
 	const struct fdt_match *match;
 
-	for (pos = 0; pos < array_size(special_platforms); pos++) {
-		plat = special_platforms[pos];
+	for (pos = 0; pos < platform_override_modules_size; pos++) {
+		plat = platform_override_modules[pos];
 		if (!plat->match_table)
 			continue;
 
@@ -57,6 +58,7 @@ static void fw_platform_lookup_special(void *fdt, int root_offset)
 }
 
 extern struct sbi_platform platform;
+static bool platform_has_mlevel_imsic = false;
 static u32 generic_hart_index2id[SBI_HARTMASK_MAX_BITS] = { 0 };
 
 /*
@@ -106,10 +108,15 @@ unsigned long fw_platform_init(unsigned long arg0, unsigned long arg1,
 		if (SBI_HARTMASK_MAX_BITS <= hartid)
 			continue;
 
+		if (!fdt_node_is_enabled(fdt, cpu_offset))
+			continue;
+
 		generic_hart_index2id[hart_count++] = hartid;
 	}
 
 	platform.hart_count = hart_count;
+
+	platform_has_mlevel_imsic = fdt_check_imsic_mlevel(fdt);
 
 	/* Return original FDT pointer */
 	return arg1;
@@ -117,6 +124,13 @@ unsigned long fw_platform_init(unsigned long arg0, unsigned long arg1,
 fail:
 	while (1)
 		wfi();
+}
+
+static int generic_nascent_init(void)
+{
+	if (platform_has_mlevel_imsic)
+		imsic_local_irqchip_init();
+	return 0;
 }
 
 static int generic_early_init(bool cold_boot)
@@ -157,6 +171,29 @@ static int generic_final_init(bool cold_boot)
 	}
 
 	return 0;
+}
+
+static int generic_vendor_ext_check(long extid)
+{
+	if (generic_plat && generic_plat->vendor_ext_check)
+		return generic_plat->vendor_ext_check(extid,
+						      generic_plat_match);
+
+	return 0;
+}
+
+static int generic_vendor_ext_provider(long extid, long funcid,
+				       const struct sbi_trap_regs *regs,
+				       unsigned long *out_value,
+				       struct sbi_trap_info *out_trap)
+{
+	if (generic_plat && generic_plat->vendor_ext_provider) {
+		return generic_plat->vendor_ext_provider(extid, funcid, regs,
+							 out_value, out_trap,
+							 generic_plat_match);
+	}
+
+	return SBI_ENOTSUPP;
 }
 
 static void generic_early_exit(void)
@@ -385,6 +422,8 @@ const struct sbi_platform_operations platform_ops = {
 	.get_tlbr_flush_limit	= generic_tlbr_flush_limit,
 	.timer_init		= fdt_timer_init,
 	.timer_exit		= fdt_timer_exit,
+	.vendor_ext_check	= generic_vendor_ext_check,
+	.vendor_ext_provider	= generic_vendor_ext_provider,
 };
 
 struct sbi_platform platform = {
