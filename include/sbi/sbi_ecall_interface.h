@@ -28,6 +28,7 @@
 #define SBI_EXT_RFENCE				0x52464E43
 #define SBI_EXT_HSM				0x48534D
 #define SBI_EXT_SRST				0x53525354
+#define SBI_EXT_PMU				0x504D55
 #define SBI_EXT_SUSP				0x53555350
 
 /* SBI function IDs for BASE extension*/
@@ -254,7 +255,7 @@ enum sbi_pmu_ctr_type {
 #define SBI_SUSP_SLEEP_TYPE_LAST               SBI_SUSP_SLEEP_TYPE_SUSPEND
 #define SBI_SUSP_PLATFORM_SLEEP_START          0x80000000
 
-#define SBI_LAST_ERR				SBI_ERR_ALREADY_AVAILABLE
+#define SBI_LAST_ERR				SBI_ERR_ALREADY_STOPPED
 
 /* clang-format on */
 
