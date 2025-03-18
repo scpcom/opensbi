@@ -252,6 +252,14 @@ static uint64_t generic_pmu_xlate_to_mhpmevent(uint32_t event_idx,
 	return evt_val;
 }
 
+static int generic_console_init(void)
+{
+	if (semihosting_enabled())
+		return semihosting_init();
+	else
+		return fdt_serial_init();
+}
+
 #include <sbi/sbi_trap.h>
 #define CSR_MCOUNTERWEN  0x7c9
 static void sbi_thead_pmu_init(void)
