@@ -14,8 +14,6 @@
 #include <sbi/sbi_types.h>
 #include <sbi/sbi_trap.h>
 
-extern const struct platform_override sifive_fu540;
-extern const struct platform_override cvitek_riscv;
 extern u8 suspend_sram_entry[];
 extern u8 suspend_sram_end[];
 
