@@ -16,10 +16,12 @@
 #include <sbi/sbi_const.h>
 #include <sbi/sbi_platform.h>
 #include <sbi/sbi_system.h>
+#include <sbi_utils/fdt/fdt_helper.h>
 #include <sbi_utils/fdt/fdt_fixup.h>
+#include <sbi_utils/ipi/aclint_mswi.h>
 #include <sbi_utils/irqchip/plic.h>
 #include <sbi_utils/serial/sifive-uart.h>
-#include <sbi_utils/sys/clint.h>
+#include <sbi_utils/timer/aclint_mtimer.h>
 
 /* clang-format off */
 
@@ -32,6 +34,10 @@
 #define UX600_NUCLEI_TIMER_MSFTRST_KEY	0x80000A5F
 /* The clint compatiable timer offset is 0x1000 against nuclei timer */
 #define UX600_CLINT_TIMER_ADDR		(UX600_NUCLEI_TIMER_ADDR + 0x1000)
+#define UX600_ACLINT_MSWI_ADDR		(UX600_CLINT_TIMER_ADDR + \
+					 CLINT_MSWI_OFFSET)
+#define UX600_ACLINT_MTIMER_ADDR	(UX600_CLINT_TIMER_ADDR + \
+					 CLINT_MTIMER_OFFSET)
 
 #define UX600_PLIC_ADDR			0x8000000
 #define UX600_PLIC_NUM_SOURCES		0x35
@@ -61,12 +67,26 @@ static struct plic_data plic = {
 	.num_src = UX600_PLIC_NUM_SOURCES,
 };
 
-static struct clint_data clint = {
-	.addr = UX600_CLINT_TIMER_ADDR,
+static struct aclint_mswi_data mswi = {
+	.addr = UX600_ACLINT_MSWI_ADDR,
+	.size = ACLINT_MSWI_SIZE,
+	.first_hartid = 0,
+	.hart_count = UX600_HART_COUNT,
+};
+
+static struct aclint_mtimer_data mtimer = {
+	.mtime_freq = UX600_TIMER_FREQ,
+	.mtime_addr = UX600_ACLINT_MTIMER_ADDR +
+		      ACLINT_DEFAULT_MTIME_OFFSET,
+	.mtime_size = ACLINT_DEFAULT_MTIME_SIZE,
+	.mtimecmp_addr = UX600_ACLINT_MTIMER_ADDR +
+			 ACLINT_DEFAULT_MTIMECMP_OFFSET,
+	.mtimecmp_size = ACLINT_DEFAULT_MTIMECMP_SIZE,
 	.first_hartid = 0,
 	.hart_count = UX600_HART_COUNT,
 	.has_64bit_mmio = TRUE,
 };
+
 static u32 measure_cpu_freq(u32 n)
 {
 	u32 start_mtime, delta_mtime;
@@ -129,7 +149,7 @@ static int ux600_early_init(bool cold_boot)
 	u32 regval;
 
 	if (cold_boot)
-		sbi_system_reset_set_device(&ux600_reset);
+		sbi_system_reset_add_device(&ux600_reset);
 
 	/* Measure CPU Frequency using Timer */
 	ux600_clk_freq = ux600_get_clk_freq();
@@ -156,7 +176,7 @@ static int ux600_final_init(bool cold_boot)
 	if (!cold_boot)
 		return 0;
 
-	fdt = sbi_scratch_thishart_arg1_ptr();
+	fdt = fdt_get_address();
 	ux600_modify_dt(fdt);
 
 	return 0;
@@ -188,12 +208,12 @@ static int ux600_ipi_init(bool cold_boot)
 	int rc;
 
 	if (cold_boot) {
-		rc = clint_cold_ipi_init(&clint);
+		rc = aclint_mswi_cold_init(&mswi);
 		if (rc)
 			return rc;
 	}
 
-	return clint_warm_ipi_init();
+	return aclint_mswi_warm_init();
 }
 
 static int ux600_timer_init(bool cold_boot)
@@ -201,12 +221,12 @@ static int ux600_timer_init(bool cold_boot)
 	int rc;
 
 	if (cold_boot) {
-		rc = clint_cold_timer_init(&clint, NULL);
+		rc = aclint_mtimer_cold_init(&mtimer, NULL);
 		if (rc)
 			return rc;
 	}
 
-	return clint_warm_timer_init();
+	return aclint_mtimer_warm_init();
 }
 
 const struct sbi_platform_operations platform_ops = {

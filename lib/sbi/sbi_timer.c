@@ -8,10 +8,13 @@
  */
 
 #include <sbi/riscv_asm.h>
+#include <sbi/riscv_barrier.h>
 #include <sbi/riscv_encoding.h>
+#include <sbi/sbi_console.h>
 #include <sbi/sbi_error.h>
 #include <sbi/sbi_hart.h>
 #include <sbi/sbi_platform.h>
+#include <sbi/sbi_pmu.h>
 #include <sbi/sbi_scratch.h>
 #include <sbi/sbi_timer.h>
 
@@ -44,6 +47,38 @@ static u64 get_ticks(void)
 static u64 get_platform_ticks(void)
 {
 	return timer_dev->timer_value();
+}
+
+static void nop_delay_fn(void *opaque)
+{
+	cpu_relax();
+}
+
+void sbi_timer_delay_loop(ulong units, u64 unit_freq,
+			  void (*delay_fn)(void *), void *opaque)
+{
+	u64 start_val, delta;
+
+	/* Do nothing if we don't have timer device */
+	if (!timer_dev || !get_time_val) {
+		sbi_printf("%s: called without timer device\n", __func__);
+		return;
+	}
+
+	/* Save starting timer value */
+	start_val = get_time_val();
+
+	/* Compute desired timer value delta */
+	delta = ((u64)timer_dev->timer_freq * (u64)units);
+	delta = delta / unit_freq;
+
+	/* Use NOP delay function if delay function not available */
+	if (!delay_fn)
+		delay_fn = nop_delay_fn;
+
+	/* Busy loop until desired timer value delta reached */
+	while ((get_time_val() - start_val) < delta)
+		delay_fn(opaque);
 }
 
 u64 sbi_timer_value(void)
@@ -88,6 +123,7 @@ void sbi_timer_set_delta_upper(ulong delta_upper)
 
 void sbi_timer_event_start(u64 next_event)
 {
+	sbi_pmu_ctr_incr_fw(SBI_PMU_FW_SET_TIMER);
 	if (timer_dev && timer_dev->timer_event_start)
 		timer_dev->timer_event_start(next_event);
 	csr_clear(CSR_MIP, MIP_STIP);
@@ -121,8 +157,7 @@ int sbi_timer_init(struct sbi_scratch *scratch, bool cold_boot)
 	const struct sbi_platform *plat = sbi_platform_ptr(scratch);
 
 	if (cold_boot) {
-		time_delta_off = sbi_scratch_alloc_offset(sizeof(*time_delta),
-							  "TIME_DELTA");
+		time_delta_off = sbi_scratch_alloc_offset(sizeof(*time_delta));
 		if (!time_delta_off)
 			return SBI_ENOMEM;
 

@@ -29,6 +29,7 @@ static const struct fdt_match serial_uart8250_match[] = {
 	{ .compatible = "snps,dw-apb-uart" },
 	{ .compatible = "ns16550" },
 	{ .compatible = "ns16550a" },
+	{ .compatible = "snps,dw-apb-uart" },
 	{ },
 };
 

@@ -7,14 +7,15 @@
  *   Anup Patel <anup.patel@wdc.com>
  */
 
+#include <sbi/sbi_error.h>
 #include <sbi/sbi_scratch.h>
 #include <sbi_utils/fdt/fdt_helper.h>
 #include <sbi_utils/timer/fdt_timer.h>
 
-extern struct fdt_timer fdt_timer_clint;
+extern struct fdt_timer fdt_timer_mtimer;
 
 static struct fdt_timer *timer_drivers[] = {
-	&fdt_timer_clint
+	&fdt_timer_mtimer
 };
 
 static struct fdt_timer dummy = {
@@ -44,7 +45,7 @@ static int fdt_timer_cold_init(void)
 	int pos, noff, rc;
 	struct fdt_timer *drv;
 	const struct fdt_match *match;
-	void *fdt = sbi_scratch_thishart_arg1_ptr();
+	void *fdt = fdt_get_address();
 
 	for (pos = 0; pos < array_size(timer_drivers); pos++) {
 		drv = timer_drivers[pos];
@@ -54,6 +55,8 @@ static int fdt_timer_cold_init(void)
 					drv->match_table, &match)) >= 0) {
 			if (drv->cold_init) {
 				rc = drv->cold_init(fdt, noff, match);
+				if (rc == SBI_ENODEV)
+					continue;
 				if (rc)
 					return rc;
 			}

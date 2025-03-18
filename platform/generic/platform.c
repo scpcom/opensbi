@@ -16,6 +16,7 @@
 #include <sbi_utils/fdt/fdt_domain.h>
 #include <sbi_utils/fdt/fdt_fixup.h>
 #include <sbi_utils/fdt/fdt_helper.h>
+#include <sbi_utils/fdt/fdt_pmu.h>
 #include <sbi_utils/irqchip/fdt_irqchip.h>
 #include <sbi_utils/serial/fdt_serial.h>
 #include <sbi_utils/timer/fdt_timer.h>
@@ -84,7 +85,7 @@ unsigned long fw_platform_init(unsigned long arg0, unsigned long arg1,
 
 	model = fdt_getprop(fdt, root_offset, "model", &len);
 	if (model)
-		sbi_strncpy(platform.name, model, sizeof(platform.name));
+		sbi_strncpy(platform.name, model, sizeof(platform.name) - 1);
 
 	if (generic_plat && generic_plat->features)
 		platform.features = generic_plat->features(generic_plat_match);
@@ -116,24 +117,19 @@ fail:
 
 static int generic_early_init(bool cold_boot)
 {
-	int rc;
-
-	if (generic_plat && generic_plat->early_init) {
-		rc = generic_plat->early_init(cold_boot, generic_plat_match);
-		if (rc)
-			return rc;
-	}
-
-	if (!cold_boot)
+	if (!generic_plat || !generic_plat->early_init)
 		return 0;
 
-	return fdt_reset_init();
+	return generic_plat->early_init(cold_boot, generic_plat_match);
 }
 
 static int generic_final_init(bool cold_boot)
 {
 	void *fdt;
 	int rc;
+
+	if (cold_boot)
+		fdt_reset_init();
 
 	if (generic_plat && generic_plat->final_init) {
 		rc = generic_plat->final_init(cold_boot, generic_plat_match);
@@ -144,7 +140,7 @@ static int generic_final_init(bool cold_boot)
 	if (!cold_boot)
 		return 0;
 
-	fdt = sbi_scratch_thishart_arg1_ptr();
+	fdt = fdt_get_address();
 
 	fdt_cpu_fixup(fdt);
 	fdt_fixups(fdt);
@@ -173,7 +169,7 @@ static void generic_final_exit(void)
 
 static int generic_domains_init(void)
 {
-	return fdt_domains_populate(sbi_scratch_thishart_arg1_ptr());
+	return fdt_domains_populate(fdt_get_address());
 }
 
 static u64 generic_tlbr_flush_limit(void)
@@ -353,6 +349,8 @@ const struct sbi_platform_operations platform_ops = {
 	.irqchip_exit		= fdt_irqchip_exit,
 	.ipi_init		= fdt_ipi_init,
 	.ipi_exit		= fdt_ipi_exit,
+	.pmu_init		= generic_pmu_init,
+	.pmu_xlate_to_mhpmevent = generic_pmu_xlate_to_mhpmevent,
 	.get_tlbr_flush_limit	= generic_tlbr_flush_limit,
 	.timer_init		= fdt_timer_init,
 	.timer_exit		= fdt_timer_exit,
