@@ -9,4 +9,5 @@
 
 platform-objs-y += platform.o
 platform-objs-y += sifive_fu540.o
+platform-objs-y += sifive_fu740.o
 platform-objs-y += cvitek_riscv.o
