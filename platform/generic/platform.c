@@ -407,6 +407,7 @@ static int thead_vendor_ext_provider(long extid, long funcid,
 
 const struct sbi_platform_operations platform_ops = {
 	.vendor_ext_provider	= thead_vendor_ext_provider,
+	.nascent_init		= generic_nascent_init,
 	.early_init		= generic_early_init,
 	.final_init		= generic_final_init,
 	.early_exit		= generic_early_exit,
