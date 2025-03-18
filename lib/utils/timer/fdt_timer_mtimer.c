@@ -119,6 +119,11 @@ static int timer_mtimer_cold_init(void *fdt, int nodeoff,
 	return 0;
 }
 
+static const struct timer_mtimer_quirks cvitek_clint_quirks = {
+	.mtime_offset	= CLINT_MTIMER_OFFSET,
+	.has_64bit_mmio	= false,
+};
+
 static const struct timer_mtimer_quirks sifive_clint_quirks = {
 	.mtime_offset	= CLINT_MTIMER_OFFSET,
 	.has_64bit_mmio	= true,
@@ -130,7 +135,7 @@ static const struct timer_mtimer_quirks thead_clint_quirks = {
 };
 
 static const struct fdt_match timer_mtimer_match[] = {
-	{ .compatible = "riscv,clint0", .data = &sifive_clint_quirks },
+	{ .compatible = "riscv,clint0", .data = &cvitek_clint_quirks },
 	{ .compatible = "sifive,clint0", .data = &sifive_clint_quirks },
 	{ .compatible = "thead,c900-clint", .data = &thead_clint_quirks },
 	{ .compatible = "riscv,aclint-mtimer" },
